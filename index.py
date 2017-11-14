@@ -51,6 +51,7 @@ class Indexer(object):
         self.doc_count += 1
         assert url not in self.url_to_id
         current_id = self.doc_count 
+        self.url_to_id[url] = current_id
         self.forward_index[current_id] = parsed_text
         for position, word in enumerate(parsed_text): 
             # TODO: defaultdict
@@ -60,17 +61,41 @@ class Indexer(object):
 
 
     def save_on_disk(self, index_dir):
-        inverted_index_file_name = os.path.join(index_dir, "inverted_index")
-        forward_index_file_name  = os.path.join(index_dir, "forward_index")
-        url_to_id_file_name      = os.path.join(index_dir, "url_to_id")
+        ''' save the index in a file on disk '''
+        def dump_to_file(source, fname):
+            file_path = os.path.join(index_dir, fname)
+            with open(file_path, 'wb') as myf:
+                json.dump(source, myf, indent=3)
 
-        inverted_index_file = open(inverted_index_file_name, 'w')
-        forward_index_file  = open(forward_index_file_name, 'w')
-        url_to_id_file      = open(url_to_id_file_name, 'w')
+        dump_to_file(self.inverted_index, "inverted_index")
+        dump_to_file(self.forward_index, "forward_index")
+        dump_to_file(self.url_to_id, "url_to_id")
 
-        json.dump(self.inverted_index, inverted_index_file)
-        json.dump(self.forward_index, forward_index_file)
-        json.dump(self.url_to_id, url_to_id_file)
+
+class Searcher(object):
+    def __init__(self, index_dir):
+        self.inverted_index = dict()
+        self.forward_index = dict()
+        self.url_to_id = dict()
+        self.id_to_url = dict()
+
+        def load_from_file(fname):
+            file_path = os.path.join(index_dir, fname)
+            with open(file_path, 'rb') as myf:
+                dst = json.load(myf)
+                return dst
+
+        self.inverted_index = load_from_file("inverted_index")
+        self.forward_index = load_from_file("forward_index")
+        self.url_to_id = load_from_file("url_to_id")
+
+        self.id_to_url = {v: k for k,v in self.url_to_id.iteritems()}
+
+    def find_documents(self, words):
+        return sum((self.inverted_index[word] for word in words), [])
+
+    def get_url(self, id):
+        return self.id_to_url[id]
 
 
 def create_index_from_dir(stored_documents_dir, index_dir):

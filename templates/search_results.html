@@ -1,0 +1,21 @@
+{% extends "bootstrap/base.html" %}
+{% block title %}Search Results{% endblock %}
+
+{% block navbar %}
+<div class="navbar navbar-fixed-top">
+    we got navbar
+</div>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1> Search Results for user query: [ {{query}} ] </h1>
+
+        <ul>
+            {% for url in urls %}
+            <li> <a href="{{url}}"> {{url}} </a> </li>
+            {% endfor %}
+        </ul>
+        
+    </div>
+{% endblock %}
