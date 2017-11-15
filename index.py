@@ -33,14 +33,16 @@ import base64
 import json
 import os
 
+from collections import defaultdict, deque
+
 from utils import *
 
 
 class Indexer(object):
     def __init__(self):
-        self.inverted_index = dict()
-        self.forward_index  = dict()
-        self.url_to_id      = dict()
+        self.inverted_index = defaultdict(list)
+        self.forward_index  = defaultdict(list)
+        self.url_to_id      = defaultdict(list)
         self.doc_count      = 0
 
     # TODO: remove this assumptions
@@ -54,9 +56,6 @@ class Indexer(object):
         self.url_to_id[url] = current_id
         self.forward_index[current_id] = parsed_text
         for position, word in enumerate(parsed_text): 
-            # TODO: defaultdict
-            if word not in self.inverted_index:
-                self.inverted_index[word] = []
             self.inverted_index[word].append((position, current_id))
 
 
@@ -91,11 +90,48 @@ class Searcher(object):
 
         self.id_to_url = {v: k for k,v in self.url_to_id.iteritems()}
 
-    def find_documents(self, words):
-        return sum((self.inverted_index[word] for word in words), [])
+    def get_snippet(self, query_words, doc_id):
+        entries = defaultdict(lambda: 0)
+        my_deq = deque(maxlen=50)
 
-    def get_url(self, id):
-        return self.id_to_url[id]
+        for pos, word in enumerate(self.forward_index[unicode(doc_id)]):
+            if word in query_words:
+                if entries[word]:
+                    old_pos = entries[word]
+                    entry = (old_pos, word)
+                    my_deq.remove(entry)
+                    my_deq.append((pos, word))
+                    entries[word] = pos
+                else:
+                    my_deq.append((pos, word))
+                    entries[word] = pos
+        extreme_a, extreme_b = my_deq.popleft(), my_deq.pop()
+        doc_id_text = self.forward_index[unicode(doc_id)]
+        entries = None
+        my_deq = None
+        return doc_id_text[extreme_a[0]: extreme_b[0] + 1]
+
+        # doc_id : (w1pos1, w2pos2)
+        # foreach doc_id, get text. text_window between words positions
+        
+
+    def find_documents(self, query_words):
+        return sum((self.inverted_index[word] for word in query_words), [])
+
+    def find_documents_AND(self, query_words):
+        qw_count = defaultdict(set)
+        for qw in query_words:
+            for (pos, doc_id) in self.inverted_index[qw]:
+                qw_count[doc_id].add(qw)
+        return [doc_id for doc_id, uhits in qw_count.iteritems() if len(uhits) == len(query_words)]
+        
+
+    def get_document_text(self, doc_id):
+        # doc_id -> text
+        return self.forward_index[unicode(doc_id)]
+
+    def get_url(self, doc_id):
+        return self.id_to_url[doc_id]
 
 
 def create_index_from_dir(stored_documents_dir, index_dir):

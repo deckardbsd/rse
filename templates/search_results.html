@@ -12,8 +12,13 @@
         <h1> Search Results for user query: [ {{query}} ] </h1>
 
         <ul>
-            {% for url in urls %}
-            <li> <a href="{{url}}"> {{url}} </a> </li>
+            {% for tu in texts_and_urls %}
+                {% set url = tu[0] %}
+                {% set text = tu[1] %}
+                <li>
+                    <p> <a href="{{url}}"> {{url}} </a> </p>
+                    <blockquote> {{text}} </blockquote>
+                </li>
             {% endfor %}
         </ul>
         

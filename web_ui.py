@@ -26,9 +26,12 @@ def index():
 
 @app.route('/search_results/<query>')
 def search_results(query):
-    pos_n_doc_ids = searcher.find_documents(query.split(' '))
-    urls = [searcher.get_url(id) for pos, id in pos_n_doc_ids]
-    return render_template('search_results.html', query=query, urls=urls)
+    query_words = query.split(' ')
+    doc_ids = searcher.find_documents_AND(query.split(' '))
+    urls = [searcher.get_url(id) for id in doc_ids]
+    # texts = [" ".join(searcher.get_document_text(id)) for id in doc_ids]
+    texts = [" ".join(searcher.get_snippet(query_words, id)) for id in doc_ids]
+    return render_template('search_results.html', query=query, urls=urls, texts_and_urls=zip(urls, texts))
 
 if __name__ == '__main__':
     app.run(debug=True)
