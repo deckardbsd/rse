@@ -118,17 +118,27 @@ class Searcher(object):
     def find_documents(self, query_words):
         return sum((self.inverted_index[word] for word in query_words), [])
 
+
     def find_documents_AND(self, query_words):
         qw_count = defaultdict(set)
         for qw in query_words:
             for (pos, doc_id) in self.inverted_index[qw]:
                 qw_count[doc_id].add(qw)
         return [doc_id for doc_id, uhits in qw_count.iteritems() if len(uhits) == len(query_words)]
+
+
+    def find_documents_OR(self, query_words):
+        doc_ids = set()
+        for qw in query_words:
+            for (pos, doc_id) in self.inverted_index[qw]:
+                doc_ids.add(doc_id)
+        return doc_ids
         
 
     def get_document_text(self, doc_id):
         # doc_id -> text
         return self.forward_index[unicode(doc_id)]
+
 
     def get_url(self, doc_id):
         return self.id_to_url[doc_id]

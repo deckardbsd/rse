@@ -19,7 +19,10 @@
                     <p> <a href="{{url}}"> {{url}} </a> </p>
                     <blockquote> {{text}} </blockquote>
                 </li>
+            {% else %}
+                <p> No results found </p>
             {% endfor %}
+
         </ul>
         
     </div>

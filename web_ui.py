@@ -5,6 +5,7 @@ from wtforms import StringField, SubmitField
 from wtforms import validators
 
 from index import Searcher
+from lang_proc import query_terms
 
 
 app = Flask(__name__)
@@ -27,8 +28,11 @@ def index():
 @app.route('/search_results/<query>')
 def search_results(query):
     query_words = query.split(' ')
-    doc_ids = searcher.find_documents_AND(query.split(' '))
+    # query_words = query_terms(query)
+    print('Query words ----------- {}'.format(query_words))
+    doc_ids = searcher.find_documents_AND(query_words)
     urls = [searcher.get_url(id) for id in doc_ids]
+    print 'URLS len is {}'.format(len(urls))
     # texts = [" ".join(searcher.get_document_text(id)) for id in doc_ids]
     texts = [" ".join(searcher.get_snippet(query_words, id)) for id in doc_ids]
     return render_template('search_results.html', query=query, urls=urls, texts_and_urls=zip(urls, texts))
